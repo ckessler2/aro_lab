@@ -5,7 +5,9 @@ Created on Wed Oct 11 14:58:17 2023
 
 @author: root
 """
-#!meshcat-server
+import numpy as np
+
+# !meshcat-server
 from tools import setupwithmeshcat
 robot, cube, viz = setupwithmeshcat(url="tcp://127.0.0.1:6000")
 
@@ -32,10 +34,20 @@ frameid = robot.model.getFrameId(LEFT_HAND)
 oMframe = robot.data.oMf[frameid] 
 print(oMframe)
 
+
+# print ("Left hand joint placement: ")
+# frameid = robot.model.getFrameId(LEFT_HAND)
+# oMframe = robot.data.oMf[frameid] 
+# print(oMframe)
+
+
+
+
 ## 3: Helper functions (tutorial)
 from config import LEFT_HOOK, RIGHT_HOOK, CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
 from tools import getcubeplacement, setcubeplacement
 from setup_meshcat import updatevisuals
+from inverse_geometry import computeqgrasppose
 
 #We can access the current cube position using
 oMcube  = getcubeplacement(cube) #origin of the cube
@@ -43,7 +55,16 @@ oMcubeL = getcubeplacement(cube, LEFT_HOOK) #placement of the left hand hook
 oMcubeR = getcubeplacement(cube, RIGHT_HOOK) #placement of the right hand hook
 
 
+
 #the cube position is updated using the following function:
 setcubeplacement(robot, cube, CUBE_PLACEMENT)
 #to update the frames for both the robot and the cube you can call
 updatevisuals(viz, robot, cube, q)
+
+q_opt = computeqgrasppose(robot, q, cube, CUBE_PLACEMENT_TARGET, viz=True)
+
+updatevisuals(viz, robot, cube, q_opt)
+
+from tools import collision
+
+print("Collision check: " + str(collision(robot,q_opt)))

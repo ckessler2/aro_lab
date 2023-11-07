@@ -15,13 +15,33 @@ from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
 
 from tools import setcubeplacement
 
+from scipy.optimize import fmin_bfgs
+
+
+
 def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
-    '''Return a collision free configuration grasping a cube at a specific location and a success flag'''
-    setcubeplacement(robot, cube, cubetarget)
-    #TODO implement
-    print ("TODO: implement me")
-    return robot.q0, False
-            
+    # Import bfgs
+    from scipy.optimize import fmin_bfgs
+    
+    # Define left/right hand targets based on cubetarget
+    target_L = cubetarget + np.array([[0,0,0,0],[0,0,0,0.05],[0,0,0,0],[0,0,0,0]])
+    target_R = cubetarget - np.array([[2,0,0,0],[0,2,0,0.05],[0,0,0,0],[0,0,0,0]])
+    
+    # Cost function, summing squares of both euclidian distances (hand to target)
+    def cost(q,robot,target_R,target_L):
+        pin.framesForwardKinematics(robot.model,robot.data,q)
+        eff = np.asarray(robot.data.oMf[robot.model.getFrameId(RIGHT_HAND)])
+        eff2 = np.asarray(robot.data.oMf[robot.model.getFrameId(LEFT_HAND)])
+        return np.linalg.norm(eff - target_R)**2 + np.linalg.norm(eff2 - target_L)**2
+
+    # Solve using BFGS
+    qopt_bfgs = fmin_bfgs(cost, qcurrent, args=(robot,target_R,target_L))
+    print('\n *** Optimal configuration from BFGS = %s \n\n\n\n' % qopt_bfgs)
+    
+    return qopt_bfgs
+          
+
+    
 if __name__ == "__main__":
     from tools import setupwithmeshcat
     from setup_meshcat import updatevisuals
@@ -34,5 +54,4 @@ if __name__ == "__main__":
     
     updatevisuals(viz, robot, cube, q0)
     
-    
-    
+print('success')
