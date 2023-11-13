@@ -15,7 +15,7 @@ import time
 
 #returns a collision free path from qinit to qgoal under grasping constraints
 #the path is expressed as a list of configurations
-def computepath(robot,cube,viz, qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
+def computepath(robot,cube,qinit,qgoal,cubeplacementq0, cubeplacementqgoal, viz):
     from tools import collision,jointlimitsviolated
     from setup_meshcat import updatevisuals
 
@@ -23,7 +23,7 @@ def computepath(robot,cube,viz, qinit,qgoal,cubeplacementq0, cubeplacementqgoal)
     max_y = np.asarray(cubeplacementqgoal)[1,3] + 0.05
     min_x = np.asarray(cubeplacementq0)[0,3] - 0.05
     min_y = np.asarray(cubeplacementq0)[1,3] - 0.05
-    max_z = 1.2
+    max_z = 1.6
     min_z = 0.93
 
     steps = 300
@@ -37,18 +37,26 @@ def computepath(robot,cube,viz, qinit,qgoal,cubeplacementq0, cubeplacementqgoal)
         from inverse_geometry import computeqgrasppose
         import time
         while True:
+            restart_loop = False
             # generate random cube xyz within limits
             x = (np.random.default_rng().random()* (max_x-min_x)) + min_x
             y = (np.random.default_rng().random()* (max_y-min_y)) + min_y
             z = (np.random.default_rng().random()* (max_z-min_z)) + min_z
+            if (x-0.33)<0.1 and (y+0.3)<0.3 and z<1.4:
+                restart_loop = True
             rand_cube_pos = np.array([[1,0,0,x],[0,1,0,y],[0,0,1,z],[0,0,0,1]])
             # calculate inverse geometry
-            q1 = computeqgrasppose(robot, qinit, cube, rand_cube_pos, viz)
+            q1,successinit = computeqgrasppose(robot, qinit, cube, rand_cube_pos, True)
             # if collision/jointlimit/obstacle are not violated, return config
-            if not (collision(robot, q1) or jointlimitsviolated(robot, q1) or distanceToObstacle(robot, q1)<0.01): 
+            if restart_loop == True:
+                continue
+            elif (collision(robot, q1) or jointlimitsviolated(robot, q1) or distanceToObstacle(robot, q1)<0.01): 
                 time.sleep(0.000001)
-                updatevisuals(viz, robot, cube, q1)
+                if viz != None:
+                    updatevisuals(viz, robot, cube, q1)
                 return q1
+            else:
+                continue
 
     def lerp(q0,q1,t):    
         return q0 * (1 - t) + q1 * t
@@ -137,8 +145,9 @@ def computepath(robot,cube,viz, qinit,qgoal,cubeplacementq0, cubeplacementqgoal)
     G, foundpath = rrt(qinit, qgoal, steps, delta)
     
     path = foundpath and getpath(G) or [] 
-    displaypath(path)
-    return [qinit, qgoal, getpath(G), foundpath]
+    if viz != None:
+        displaypath(path)   
+    return [getpath(G)]
     pass
 
 

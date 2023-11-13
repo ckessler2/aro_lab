@@ -64,134 +64,85 @@ updatevisuals(viz, robot, cube, q)
 q_start = computeqgrasppose(robot, q, cube, CUBE_PLACEMENT, viz)
 q_final = computeqgrasppose(robot, q, cube, CUBE_PLACEMENT_TARGET, viz)
 
-# from tools import collision,jointlimitsviolated
-# # print("Collision check: " + str(collision(robot,q_opt)))
-# # print("Joint Violation check: " + str(jointlimitsviolated(robot,q_opt)))
-
-# max_x = np.asarray(CUBE_PLACEMENT_TARGET)[0,3] + 0.05
-# max_y = np.asarray(CUBE_PLACEMENT_TARGET)[1,3] + 0.05
-# min_x = np.asarray(CUBE_PLACEMENT)[0,3] - 0.05
-# min_y = np.asarray(CUBE_PLACEMENT)[1,3] - 0.05
-# max_z = 1.2
-# min_z = 0.93
-
-# steps = 300
-# configs = []
-# discretisationsteps_newconf = 10 #To tweak later on
-# discretisationsteps_validedge = 10 #To tweak later on
-# delta = 300 #To tweak later on
-
-# def Rand_Cube_Conf():
-#     from tools import collision,jointlimitsviolated,distanceToObstacle
-#     import time
-#     while True:
-#         # generate randome cube xyz within limits
-#         x = (np.random.default_rng().random()* (max_x-min_x)) + min_x
-#         y = (np.random.default_rng().random()* (max_y-min_y)) + min_y
-#         z = (np.random.default_rng().random()* (max_z-min_z)) + min_z
-#         rand_cube_pos = np.array([[1,0,0,x],[0,1,0,y],[0,0,1,z],[0,0,0,1]])
-#         # calculate inverse geometry
-#         q1 = computeqgrasppose(robot, q, cube, rand_cube_pos, viz)
-#         # if collision/jointlimit/obstacle are not violated, return config
-#         if not (collision(robot, q1) or jointlimitsviolated(robot, q1) or distanceToObstacle(robot, q1)<0.01): 
-#             time.sleep(0.000001)
-#             updatevisuals(viz, robot, cube, q1)
-#             return q1
-
-# def lerp(q0,q1,t):    
-#     return q0 * (1 - t) + q1 * t
-
-# def distance(q1,q2):    
-#     '''Return the euclidian distance between two configurations'''
-#     return np.linalg.norm(q2-q1)
-        
-# def NEAREST_VERTEX(G,q_rand):
-#     '''returns the index of the Node of G with the configuration closest to q_rand  '''
-#     min_dist = 10e4
-#     idx=-1
-#     for (i,node) in enumerate(G):
-#         dist = distance(node[1],q_rand) 
-#         if dist < min_dist:
-#             min_dist = dist
-#             idx = i
-#     return idx
-
-# def NEW_CONF(q_near,q_rand,discretisationsteps, delta_q = None):
-#     '''Return the closest configuration q_new such that the path q_near => q_new is the longest
-#     along the linear interpolation (q_near,q_rand) that is collision free and of length <  delta_q'''
-#     q_end = q_rand.copy()
-#     dist = distance(q_near, q_rand)
-#     if delta_q is not None and dist > delta_q:
-#         #compute the configuration that corresponds to a path of length delta_q
-#         q_end = lerp(q_near,q_rand,delta_q/dist)
-#         dist = delta_q
-#     dt = dist / discretisationsteps
-#     for i in range(1,discretisationsteps):
-#         q = lerp(q_near,q_end,dt*i)
-#         if collision(robot,q):
-#             return lerp(q_near,q_end,dt*(i-1))
-#     return q_end
-
-
-# def VALID_EDGE(q_new,q_goal,discretisationsteps):
-#     return np.linalg.norm(q_goal -NEW_CONF(q_new, q_goal,discretisationsteps)) < 0.0001
-# def ADD_EDGE_AND_VERTEX(G,parent,q):
-#     G += [(parent,q)]
-
-# def rrt(q_init, q_goal, steps, delta_q):
-#     G = [(None,q_init)]
-#     for _ in range(steps):
-#         print('step ' + str(_))
-#         q_rand = Rand_Cube_Conf()
-#         q_near_index = NEAREST_VERTEX(G,q_rand)
-#         q_near = G[q_near_index][1]        
-#         q_new = NEW_CONF(q_near,q_rand,discretisationsteps_newconf, delta_q = None)    
-#         ADD_EDGE_AND_VERTEX(G,q_near_index,q_new)
-#         if VALID_EDGE(q_new,q_goal,discretisationsteps_validedge):
-#             print ("Path found!")
-#             ADD_EDGE_AND_VERTEX(G,len(G)-1,q_goal)
-#             return G, True
-#     print("path not found")
-#     return G, False
-
-# def getpath(G):
-#     path = []
-#     node = G[-1]
-#     while node[0] is not None:
-#         path = [node[1]] + path
-#         node = G[node[0]]
-#     path = [G[0][1]] + path
-#     return path
-
-# from math import ceil
-# from time import sleep
-
-# def displayedge(q0,q1,vel=2.): #vel in sec.    
-#     '''Display the path obtained by linear interpolation of q0 to q1 at constant velocity vel'''
-#     dist = distance(q0,q1)
-#     duration = dist / vel    
-#     nframes = ceil(48. * duration)
-#     f = 1./48.
-#     for i in range(nframes-1):
-#         viz.display(lerp(q0,q1,float(i)/nframes))
-#         sleep(f)
-#     viz.display(q1)
-#     sleep(f)
-    
-# def displaypath(path):
-#     for q0, q1 in zip(path[:-1],path[1:]):
-#         displayedge(q0,q1)
-    
-# G, foundpath = rrt(q_start, q_final, steps, delta)
-
 from path import computepath
 
-qinit, qgoal, G, foundpath = computepath(robot,cube,viz, q_start,q_final,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
+G = computepath(robot,cube, q_start[0],q_final[0],CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET,viz)
+G = G[0]
 
-# path = foundpath and getpath(G) or [] 
-# displaypath(path)
+def Pos_Interp(a,b,x):
+    amp = b-a
+    ext = 1.0
+    pos1 = (amp/(ext*ext))*2 * x * x
+    pos2 = amp - ((amp/(ext*ext))*2 * (x-ext) * (x-ext))
+    vel1 = 4 * amp * x / (ext * ext)
+    vel2 = 4 * amp * (ext - x) / (ext * ext)
+    acc1 = 4 * amp / (ext * ext)
+    acc2 = -4 * amp / (ext * ext)
+    if x < 0.5:
+        return pos1, vel1, acc1
+    else:
+        return pos2, vel2, acc2
 
-# import time
-# for n in range(len(G)-1):
-#     updatevisuals(viz, robot, cube, G[n][1])
-#     time.sleep(0.5)
+def Traj_Interp1(G, t, t_total):
+    # G = G[0]
+    traj_sec_time = t_total/(len(G)-1)
+    n = int(np.floor(t/traj_sec_time))
+    # print('section ' + str(n))
+    sec_start_time = n*traj_sec_time
+    sec_end_time = (n+1)*traj_sec_time
+    # print('starts at ' + str(sec_start_time) + ', ends at ' + str(sec_end_time))
+    sec_start_config = G[n]
+    try:
+        sec_end_config = G[n+1]
+    except IndexError:
+        config_pos, config_vel, config_acc = G[n]*0,G[n]*0,G[n]*0
+        return config_pos, config_vel, config_acc
+        
+    # print('start config = ' + str(sec_start_config))
+    # print('end config = ' + str(sec_end_config))
+    config_pos=[]
+    config_vel=[]
+    config_acc=[]
+    step_time = t - (n*traj_sec_time)
+    step_time_frac = step_time/traj_sec_time
+
+    for i in range(len(G[n])):
+        # print(i)
+        config_pos.append(Pos_Interp(G[n][i], G[n+1][i], step_time_frac)[0])
+        config_vel.append(Pos_Interp(G[n][i], G[n+1][i], step_time_frac)[1]) 
+        config_acc.append(Pos_Interp(G[n][i], G[n+1][i], step_time_frac)[2]) 
+    return config_pos, config_vel, config_acc
+
+import numpy as np
+import matplotlib.pyplot as plot
+x = np.arange(0, 10, 0.01);
+amplitude   = np.sin(x)
+
+pos1_1 = []
+vel1_1 = []
+acc1_1 = []
+totaltime = 10
+traj_sec_time = totaltime/(len(G)-1)
+
+joint = 5
+pos1_1 = []
+vel1_1 = []
+acc1_1 = []
+
+for i in x:
+    n = int(np.floor(i/traj_sec_time))
+    if n == len(G):
+        n = len(G)-1
+
+    pos1_1.append(G[n][joint] + Traj_Interp1(G,i,10)[0][joint])
+    vel1_1.append(Traj_Interp1(G,i,10)[1][joint])
+    acc1_1.append(Traj_Interp1(G,i,10)[2][joint])
+
+plot.plot(x, pos1_1)
+plot.plot(x, vel1_1)
+plot.plot(x, acc1_1)
+plot.xlabel('Time')
+plot.ylabel('Position, Velocity, Acceleration')
+plot.title('Position, Velocity, and Acceleration vs Time (Joint ' + str(joint) + ')')
+
+plot.show()

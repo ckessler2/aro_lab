@@ -35,13 +35,13 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
         return np.linalg.norm(eff - target_R)**2 + np.linalg.norm(eff2 - target_L)**2
 
     # Solve using BFGS
-    qopt_bfgs = fmin_bfgs(cost, qcurrent, args=(robot,target_R,target_L),gtol=0.005)
+    qopt_bfgs = fmin_bfgs(cost, qcurrent, args=(robot,target_R,target_L),gtol=0.002)
     # print('\n *** Optimal configuration from BFGS = %s \n\n\n\n' % qopt_bfgs)
     
     if viz is not None:
         from setup_meshcat import updatevisuals
-        updatevisuals(viz, robot, cube, qopt_bfgs)
-    return qopt_bfgs
+        # updatevisuals(viz, robot, cube, qopt_bfgs)
+    return qopt_bfgs, True
           
 
     

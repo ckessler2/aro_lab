@@ -8,7 +8,7 @@ import pybullet as pyb
 import pybullet_data
 
 # setup paths and load the core
-abs_path = os.path.dirname(os.path.realpath(__file__))
+abs_path = os.path.dirname(os.path.realpath('test.py'))
 root_path = abs_path
 core_path = root_path + '/core'
 sys.path.append(core_path)
