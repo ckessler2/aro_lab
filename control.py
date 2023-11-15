@@ -11,13 +11,15 @@ import numpy as np
 from bezier import Bezier
     
 # in my solution these gains were good enough for all joints but you might want to tune this.
-Kp =200.               # proportional gain (P of PD)
-Kv = 0.6 * np.sqrt(Kp)   # derivative gain (D of PD)
+# Kp =200.               # proportional gain (P of PD)
+# Kv = 0.6 * np.sqrt(200)   # derivative gain (D of PD)
+
+# Kp = -1 *[650,20,0.1,1500,400,300,1000,1000,50,1500,400,300,1000,1000,50]
 
 def controllaw(sim, robot, trajs, tcurrent, cube):
     # trajs = path
     q, vq = sim.getpybulletstate()
-    traj_sec_time = 4/(len(trajs)-1)
+    traj_sec_time = 5/(len(trajs)-1)
     n = int(np.floor(tcurrent/traj_sec_time))
     if n == len(path):
         n = len(path)-1
@@ -25,14 +27,19 @@ def controllaw(sim, robot, trajs, tcurrent, cube):
     #TODO 
     # torques = [0.0 for _ in sim.bulletCtrlJointsInPinOrder]
     # expected_torques = [10*(Traj_Interp1(trajs,tcurrent,10)[2][joint]) for joint in range(15)]
-    expected_positions = [(Traj_Interp1(trajs,tcurrent,4)[0][joint]) for joint in range(15)] + trajs[n]
-    expected_velocities = [(Traj_Interp1(trajs,tcurrent,4)[1][joint]) for joint in range(15)]
+    expected_positions = [(Traj_Interp1(trajs,tcurrent,5)[0][joint]) for joint in range(15)] + trajs[n]
+    expected_velocities = [(Traj_Interp1(trajs,tcurrent,5)[1][joint]) for joint in range(15)]
     # expected_positions.reverse()
     # print('position error (joint 1): ' + str(abs(q[0]-expected_positions[11])))
-    torques = -Kp * (q-expected_positions)
+    expected_positions[0] += -0.5*np.sin((2*np.pi/5)*tcurrent)
+    print('Time = ' + str(tcurrent))
+    torques = (q-expected_positions)
+    Kp = np.array([650,20,0.1,1500,400,300,1000,1000,50,1500,400,300,1000,1000,50])
+    Kv = np.array([50,1,0.05,50,24,15,15,15,0.5,50,24,15,15,15,0.5])
+    torques *= -Kp
     torques += -Kv * (vq)
     # torques *= [0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]
-    # torques += [0,0,0,0,0,0,0,0,1,0,0,0,0,0,1] * 0.1
+    torques += [0,0,0,0,0,0,0,0,-5,0,0,0,0,0,5]
     # torques.append(0.)
     sim.step(torques)
 
@@ -50,7 +57,7 @@ if __name__ == "__main__":
     
     q0,successinit = computeqgrasppose(robot, robot.q0, cube, CUBE_PLACEMENT, None)
     qe,successend = computeqgrasppose(robot, robot.q0, cube, CUBE_PLACEMENT_TARGET,  None)
-    path = computepath(robot,cube,q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET, None)
+    path, foundpath = computepath(robot,cube,q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET, None)
     # from test import G
     path = path[0]
 
@@ -111,7 +118,7 @@ if __name__ == "__main__":
         
         return q_of_t, vq_of_t, vvq_of_t
     
-    total_time=4.
+    total_time=5.
     
     tcur = 0.
     trajs, vels, accs = maketraj(q0, qe, tcur, total_time)   
@@ -119,25 +126,28 @@ if __name__ == "__main__":
     pos1_actual = []
     joint = 11
     
-    while tcur < total_time:
-        rununtil(controllaw, DT, sim, robot, path, tcur, cube)
-        pos1_actual.append(sim.getpybulletstate()[0])
-        tcur += DT
-    for joint in range(15):
-        import numpy as np
-        import matplotlib.pyplot as plot
-        x = np.arange(0, total_time + 0.0001, 0.001);
-        traj_sec_time = total_time/(len(path)-1)
-        pos1_1=[]
-        for i in x:
-            n = int(np.floor(i/traj_sec_time))
-            if n == len(path):
-                n = len(path)-1
-            pos1_1.append(path[n][joint] + Traj_Interp1(path,i,total_time)[0][joint])
-        plot.plot(x, pos1_1)
-        plot.plot(x, np.asarray(pos1_actual)[:,joint])
-        plot.xlabel('Time')
-        plot.ylabel('Position')
-        plot.title('Position, Desired Position vs Time (Joint ' + str(joint) + ')')
-    
-        plot.show()
+    if foundpath == True:
+        while tcur < total_time:
+            rununtil(controllaw, DT, sim, robot, path, tcur, cube)
+            pos1_actual.append(sim.getpybulletstate()[0])
+            tcur += DT
+        for joint in range(15):
+            import numpy as np
+            import matplotlib.pyplot as plot
+            x = np.arange(0, total_time, 0.001);
+            traj_sec_time = total_time/(len(path)-1)
+            pos1_1=[]
+            for i in x:
+                n = int(np.floor(i/traj_sec_time))
+                if n == len(path):
+                    n = len(path)-1
+                pos1_1.append(path[n][joint] + Traj_Interp1(path,i,total_time)[0][joint])
+            plot.plot(x, pos1_1)
+            plot.plot(x, np.asarray(pos1_actual)[:,joint])
+            plot.xlabel('Time')
+            plot.ylabel('Position')
+            plot.title('Position, Desired Position vs Time (Joint ' + str(joint) + ')')
+        
+            plot.show()
+    else:
+        print("Path not found, exiting...")

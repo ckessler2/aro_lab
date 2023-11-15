@@ -23,10 +23,10 @@ def computepath(robot,cube,qinit,qgoal,cubeplacementq0, cubeplacementqgoal, viz)
     max_y = np.asarray(cubeplacementqgoal)[1,3] + 0.05
     min_x = np.asarray(cubeplacementq0)[0,3] - 0.05
     min_y = np.asarray(cubeplacementq0)[1,3] - 0.05
-    max_z = 1.6
+    max_z = 1.5
     min_z = 0.93
 
-    steps = 300
+    steps = 500
     configs = []
     discretisationsteps_newconf = 10 #To tweak later on
     discretisationsteps_validedge = 10 #To tweak later on
@@ -42,7 +42,7 @@ def computepath(robot,cube,qinit,qgoal,cubeplacementq0, cubeplacementqgoal, viz)
             x = (np.random.default_rng().random()* (max_x-min_x)) + min_x
             y = (np.random.default_rng().random()* (max_y-min_y)) + min_y
             z = (np.random.default_rng().random()* (max_z-min_z)) + min_z
-            if (x-0.33)<0.1 and (y+0.3)<0.3 and z<1.4:
+            if (x-0.33)<0.1 and (y+0.3)<0.3 and z<1.3:
                 restart_loop = True
             rand_cube_pos = np.array([[1,0,0,x],[0,1,0,y],[0,0,1,z],[0,0,0,1]])
             # calculate inverse geometry
@@ -147,7 +147,7 @@ def computepath(robot,cube,qinit,qgoal,cubeplacementq0, cubeplacementqgoal, viz)
     path = foundpath and getpath(G) or [] 
     if viz != None:
         displaypath(path)   
-    return [getpath(G)]
+    return [getpath(G)], foundpath
     pass
 
 
