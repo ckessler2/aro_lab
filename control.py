@@ -32,7 +32,7 @@ def controllaw(sim, robot, trajs, tcurrent, cube):
     # Second adds extra bending to the elbow joints, keeping the hands above the obstacle
     # Second doesnt work, so am leaving it commented for now 
     expected_positions[0] += -0.5*np.sin((2*np.pi/5)*tcurrent)
-    expected_positions += [0,0,0,0,0,0.2,0,0,0,0,0,0.2,0,0,0] * np.sin(np.pi * tcurrent / 5)
+    # expected_positions += [0,0,0,0,0,0.2,0,0,0,0,0,0.2,0,0,0] * np.sin(np.pi * tcurrent / 5)
     print('Time = ' + str(tcurrent))
     # Position error
     torques = (q-expected_positions)
